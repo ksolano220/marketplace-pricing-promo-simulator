@@ -1,9 +1,12 @@
 """
 Cleans the raw Online Retail II export and derives the fields the
-pricing/promo model needs: real order economics plus a promo flag
-inferred from each SKU's own price history (no promo field exists
-in the source data, so a discount is defined as a unit price at
-least 10% below that SKU's trailing reference price).
+pricing/promo model needs: real order economics plus an inferred
+promotional-pricing proxy (no promo field exists in the source data,
+so a line item is flagged when its unit price sits at least 10%
+below that SKU's own median observed price across the dataset). This
+is a proxy, not proof a promotion ran -- a price difference could
+also reflect a bulk-order discount, a data-entry variance, or a
+genuine list-price change over the two-year window.
 """
 
 from pathlib import Path

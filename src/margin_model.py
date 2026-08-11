@@ -8,9 +8,13 @@ they're modeled as explicit, adjustable assumptions representing a
 marketplace operator sitting on top of this order flow -- exactly the
 inputs an exec would tune when asked "if margins are low, what would
 you do?"
+
+This is a decision simulator, not a causal demand model: promo-driven
+demand lift is an assumption the user supplies and can stress-test,
+not an estimate inferred from observational pricing data.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import pandas as pd
 
@@ -23,6 +27,7 @@ class ScenarioInputs:
     promo_penetration: float  # share of orders that carry a promo, e.g. 0.10
     promo_depth: float  # avg discount on promo'd orders, e.g. 0.15
     promo_demand_lift: float  # extra order volume promo is assumed to generate, e.g. 0.08
+    platform_funding_share: float = 1.0  # share of the promo cost the platform eats, e.g. 1.0 = fully platform-funded
 
 
 @dataclass
@@ -65,7 +70,7 @@ def run_scenario(base: dict, inputs: ScenarioInputs) -> ScenarioResult:
     gmv = lifted_orders * aov
 
     promo_gmv = gmv * inputs.promo_penetration
-    promo_cost = promo_gmv * inputs.promo_depth
+    promo_cost = promo_gmv * inputs.promo_depth * inputs.platform_funding_share
 
     platform_revenue = gmv * inputs.take_rate
     payment_fees = gmv * inputs.payment_fee_pct
@@ -84,3 +89,68 @@ def run_scenario(base: dict, inputs: ScenarioInputs) -> ScenarioResult:
         contribution_margin=contribution_margin,
         contribution_margin_pct=cm_pct,
     )
+
+
+def find_breakeven_lift(base: dict, inputs: ScenarioInputs, max_lift: float = 10.0) -> dict:
+    """
+    Solves for the minimum promo_demand_lift at which running the promo
+    (at the given penetration/depth/funding split) produces contribution
+    margin at least as good as running no promo at all. Reuses
+    run_scenario as the only source of truth for the margin math, so
+    this can never drift out of sync with what the sliders compute.
+    """
+    if inputs.promo_penetration <= 0:
+        return {"reachable": False, "lift": None, "reason": "no promo penetration set"}
+
+    no_promo = replace(inputs, promo_penetration=0.0, promo_depth=0.0, promo_demand_lift=0.0)
+    baseline_cm = run_scenario(base, no_promo).contribution_margin
+
+    def cm_at(lift: float) -> float:
+        return run_scenario(base, replace(inputs, promo_demand_lift=lift)).contribution_margin
+
+    cm_lo, cm_hi = cm_at(0.0), cm_at(max_lift)
+
+    if cm_lo >= baseline_cm:
+        return {"reachable": True, "lift": 0.0, "reason": None}
+    if cm_hi < baseline_cm:
+        return {
+            "reachable": False,
+            "lift": None,
+            "reason": f"not reachable even at {max_lift:.0%} demand lift -- promo cost structurally exceeds what volume can offset at these settings",
+        }
+
+    lo, hi = 0.0, max_lift
+    for _ in range(60):
+        mid = (lo + hi) / 2
+        if cm_at(mid) < baseline_cm:
+            lo = mid
+        else:
+            hi = mid
+    return {"reachable": True, "lift": hi, "reason": None}
+
+
+def sensitivity_ranking(base: dict, inputs: ScenarioInputs) -> list[dict]:
+    """
+    Standardized one-unit bumps to each lever, ranked by contribution-
+    margin impact, reusing run_scenario so the ranking always matches
+    what the sliders actually compute.
+    """
+    baseline_cm = run_scenario(base, inputs).contribution_margin
+
+    bumps = {
+        "Take rate (+1 pt)": replace(inputs, take_rate=inputs.take_rate + 0.01),
+        "Fulfillment cost (-$1/order)": replace(
+            inputs, fulfillment_cost_per_order=max(0.0, inputs.fulfillment_cost_per_order - 1.0)
+        ),
+        "Payment fee (-1 pt)": replace(inputs, payment_fee_pct=max(0.0, inputs.payment_fee_pct - 0.01)),
+        "Promo depth (-1 pt)": replace(inputs, promo_depth=max(0.0, inputs.promo_depth - 0.01)),
+        "Promo penetration (-1 pt)": replace(inputs, promo_penetration=max(0.0, inputs.promo_penetration - 0.01)),
+    }
+
+    rows = []
+    for label, scenario_inputs in bumps.items():
+        cm = run_scenario(base, scenario_inputs).contribution_margin
+        rows.append({"lever": label, "cm_delta": cm - baseline_cm})
+
+    rows.sort(key=lambda r: -abs(r["cm_delta"]))
+    return rows
