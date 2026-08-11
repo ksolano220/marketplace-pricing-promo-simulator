@@ -13,12 +13,13 @@ The promotional discount is itself split between whoever funds it:
 
     promotional discount = platform-funded subsidy + merchant-funded subsidy
 
-Take rate and payment-processing fees are applied to CUSTOMER-PAID VALUE,
-not gross basket value. That's a deliberate, stated convention: it's the
-actual dollar amount that changes hands and flows through the platform's
-payment rails, which is how most marketplaces compute take rate in
-practice. A minority convention applies take rate to the pre-discount
-list price instead; this simulator does not use that convention.
+This simulator applies take rate and payment-processing fees to
+CUSTOMER-PAID VALUE, not gross basket value. That's a deliberate,
+stated modeling choice, not a claim about industry-wide practice --
+marketplace revenue recognition and promo accounting vary by business
+model and contract structure. Other conventions (e.g. take rate on
+pre-discount list price) are equally legitimate; this simulator just
+doesn't use them.
 
 Only the PLATFORM-funded share of the discount is a cost to contribution
 margin. The merchant/vendor-funded share is reported for transparency

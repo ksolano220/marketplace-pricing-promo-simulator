@@ -82,14 +82,13 @@ The promotional discount is split between whoever funds it:
 promotional discount = platform-funded subsidy + merchant/vendor-funded subsidy
 ```
 
-**Take rate and payment-processing fees apply to customer-paid value**
-(post-discount) -- the actual dollar amount that changes hands and
-flows through the platform's payment rails, which is how most
-marketplaces compute take rate in practice. A minority convention
-applies take rate to the pre-discount list price instead; this
-simulator does not use that convention. Only the platform-funded share
-of the discount reduces contribution margin -- the merchant-funded
-share is shown for transparency but isn't the platform's money.
+**This simulator applies take rate and payment-processing fees to
+customer-paid value** (post-discount). Other marketplace accounting
+conventions may differ -- take rate on pre-discount list price, for
+example -- this is a stated modeling choice, not a claim about
+industry-wide practice. Only the platform-funded share of the discount
+reduces contribution margin -- the merchant-funded share is shown for
+transparency but isn't the platform's money.
 
 ```
 Contribution margin = platform revenue - payment fees - fulfillment cost - platform-funded subsidy
@@ -117,19 +116,24 @@ a promo needs to match the no-promo contribution margin, by reusing
 `run_scenario()` in a binary search rather than re-deriving the
 economics -- so it can never drift out of sync with what the sliders
 compute. The solver can search up to 1000% incremental lift
-mathematically; the UI separately flags results above ~25-100% as
-increasingly commercially aggressive, since a mathematically reachable
-answer isn't automatically a realistic one.
+mathematically; the UI reports the required lift as a plain number and,
+if it exceeds 100%, says so explicitly and asks the user to assess
+whether that's commercially realistic for their context -- rather than
+asserting a specific universal threshold for what counts as
+"plausible," which this project has no evidence to support.
 
 `sensitivity_ranking()` tests five specific, practical operating
 changes from the current scenario (not standardized units -- a
 $1/order fulfillment move and a 1-point take-rate move aren't
 equal-sized economically) and ranks them by contribution-margin
 impact. Each row also reports the change as a % of the current
-scenario's contribution margin, which *is* comparable across levers.
-The promo-exposure row deliberately moves two things at once -- less
-promo cost and less assumed incremental volume -- because that's what
-the demand equation says actually happens when exposure changes.
+scenario's contribution margin, which expresses impact relative to
+CM -- it does not make the underlying input changes themselves
+comparable, since they still differ in magnitude; this should not be
+read as normalized sensitivity. The promo-exposure row deliberately
+moves two things at once -- less promo cost and less assumed
+incremental volume -- because that's what the demand equation says
+actually happens when exposure changes.
 
 ## Fulfillment presets
 

@@ -186,28 +186,28 @@ else:
     required = breakeven["lift"]
     assumed = incremental_lift
     verdict = "meets" if assumed >= required else "falls short of"
-    if required <= 0.25:
-        plausibility = "plausible by conventional operating standards"
-    elif required <= 1.0:
-        plausibility = "aggressive, but mathematically achievable under this model"
-    else:
-        plausibility = "commercially implausible by conventional standards, even though the solver can reach it mathematically"
+    caution = (
+        " This scenario requires more than doubling promo-exposed demand to break even; "
+        "assess whether that assumption is commercially realistic for your context."
+        if required > 1.0
+        else ""
+    )
     st.markdown(
         f"At a **{promo_depth:.0%} discount** applied to **{promo_exposed_gmv_share:.0%} of gross "
         f"basket value** ({platform_funding_share:.0%} platform-funded), promoted demand needs to "
         f"generate at least **{required:.1%} incremental order lift** to break even on contribution "
-        f"margin -- {plausibility}. Your assumed lift of **{assumed:.0%} {verdict}** that bar."
+        f"margin.{caution} Your assumed lift of **{assumed:.0%} {verdict}** that bar."
     )
 
 st.subheader("Impact of practical operating changes")
 st.caption(
     "Each row is one specific, independently-tested change from the current scenario -- not "
     "standardized units, so a \\$1/order fulfillment move and a 1-point take-rate move aren't "
-    "directly comparable in size. The % column expresses each as a share of the current "
-    "scenario's contribution margin, which is comparable across rows. The promo-exposed GMV "
-    "share row deliberately moves two things at once -- less promo cost and less assumed "
-    "incremental volume -- because that's what the model says actually happens when exposure "
-    "changes."
+    "directly comparable in size. The % column expresses each scenario's impact relative to "
+    "current contribution margin. Because the tested input changes differ in magnitude, this "
+    "should not be interpreted as normalized sensitivity. The promo-exposed GMV share row "
+    "deliberately moves two things at once -- less promo cost and less assumed incremental "
+    "volume -- because that's what the model says actually happens when exposure changes."
 )
 sens = sensitivity_ranking(base, inputs)
 sens_df = pd.DataFrame(sens)
