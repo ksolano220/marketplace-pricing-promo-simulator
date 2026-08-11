@@ -29,7 +29,14 @@ def load_raw() -> pd.DataFrame:
 
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
-    df = df.dropna(subset=["Customer_ID"]).copy()
+    # Customer_ID is missing on ~23% of rows (~14% of revenue) -- these are
+    # real guest/unregistered-checkout transactions in this dataset, not
+    # data errors. Nothing in the margin model (orders, GMV, promo exposure,
+    # contribution margin) depends on Customer_ID, so these rows are kept;
+    # only the informational "unique customers" metric silently excludes
+    # them (pandas .nunique() ignores NaN), which is the one number in this
+    # tool that's a slight undercount as a result.
+    df = df.copy()
     df["Invoice"] = df["Invoice"].astype(str)
     df["is_cancelled"] = df["Invoice"].str.startswith("C")
 
