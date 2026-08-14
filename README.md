@@ -11,8 +11,8 @@ not estimate elasticity or incrementality from the data, does not
 predict actual marketplace outcomes, and does not have access to any
 real marketplace company's data. Order volume and list-price AOV are
 real, observed numbers from a public dataset; everything a marketplace
-operator would actually control -- take rate, fulfillment cost, promo
-economics, funding split -- is an explicit, adjustable assumption the
+operator would actually control (take rate, fulfillment cost, promo
+economics, funding split) is an explicit, adjustable assumption the
 user supplies and stress-tests.
 
 ## What it answers
@@ -22,10 +22,10 @@ user supplies and stress-tests.
   platform actually pays for?
 - If a promo covers X% of gross basket value at Y% depth, how much
   incremental order volume does it need among promo-exposed demand to
-  break even on contribution margin -- computed directly, not eyeballed
-  off a slider?
-- Of a specific set of practical operating changes -- take rate,
-  fulfillment cost, payment fee, promo depth, promo exposure -- which
+  break even on contribution margin, computed directly rather than
+  eyeballed off a slider?
+- Of a specific set of practical operating changes (take rate,
+  fulfillment cost, payment fee, promo depth, promo exposure), which
   produces the largest contribution-margin impact right now?
 - How does the picture change if a promo is fully platform-funded vs.
   shared with a merchant/vendor, or if fulfillment is owned vs.
@@ -45,22 +45,23 @@ UCI's servers; `src/data_prep.py` cleans it.
   exists in the source data. A line item is flagged as an **inferred
   promotional-pricing proxy** when its price sits 10%+ below that
   SKU's own median observed price across the full two-year dataset.
-  That's a proxy, not proof a promotion ran -- a bulk-order discount,
+  That's a proxy, not proof a promotion ran: a bulk-order discount,
   a data-entry variance, or a genuine list-price change over the
   window could all trigger it. Because the reference price is a
   full-period median rather than a time-windowed one, a legitimate
   price change partway through the window can also look like a
   promotion. This project intentionally does not build a rolling-
-  price or causal pricing model to fix that -- it's a Strategy & Ops
-  scenario tool, not an academic pricing paper -- but the limitation
-  is real and worth knowing before trusting the proxy at face value.
+  price or causal pricing model to fix that, since it's a Strategy &
+  Ops scenario tool rather than an academic pricing paper, but the
+  limitation is real and worth knowing before trusting the proxy at
+  face value.
 - **Modeled assumptions, adjustable in the app:** take rate, payment
   processing fee, fulfillment cost per order, and the
   platform/merchant funding split on any promo. None of these exist
   in single-retailer data; they represent a marketplace operator
   sitting on top of this real order flow.
 
-**Customer_ID:** ~23% of rows (~14% of revenue) have no Customer_ID --
+**Customer_ID:** ~23% of rows (~14% of revenue) have no Customer_ID,
 real guest/unregistered checkouts in this dataset, not data errors.
 Nothing in the margin model depends on customer identity, so these
 rows are kept; only the informational "unique customers" count
@@ -84,10 +85,10 @@ promotional discount = platform-funded subsidy + merchant/vendor-funded subsidy
 
 **This simulator applies take rate and payment-processing fees to
 customer-paid value** (post-discount). Other marketplace accounting
-conventions may differ -- take rate on pre-discount list price, for
-example -- this is a stated modeling choice, not a claim about
+conventions may differ (take rate on pre-discount list price, for
+example); this is a stated modeling choice, not a claim about
 industry-wide practice. Only the platform-funded share of the discount
-reduces contribution margin -- the merchant-funded share is shown for
+reduces contribution margin; the merchant-funded share is shown for
 transparency but isn't the platform's money.
 
 ```
@@ -114,32 +115,32 @@ from the data.
 `find_breakeven_lift()` solves for the minimum incremental order lift
 a promo needs to match the no-promo contribution margin, by reusing
 `run_scenario()` in a binary search rather than re-deriving the
-economics -- so it can never drift out of sync with what the sliders
+economics, so it can never drift out of sync with what the sliders
 compute. The solver can search up to 1000% incremental lift
 mathematically; the UI reports the required lift as a plain number and,
 if it exceeds 100%, says so explicitly and asks the user to assess
-whether that's commercially realistic for their context -- rather than
+whether that's commercially realistic for their context, rather than
 asserting a specific universal threshold for what counts as
 "plausible," which this project has no evidence to support.
 
 `sensitivity_ranking()` tests five specific, practical operating
-changes from the current scenario (not standardized units -- a
+changes from the current scenario (not standardized units: a
 $1/order fulfillment move and a 1-point take-rate move aren't
 equal-sized economically) and ranks them by contribution-margin
 impact. Each row also reports the change as a % of the current
 scenario's contribution margin, which expresses impact relative to
-CM -- it does not make the underlying input changes themselves
-comparable, since they still differ in magnitude; this should not be
-read as normalized sensitivity. The promo-exposure row deliberately
-moves two things at once -- less promo cost and less assumed
-incremental volume -- because that's what the demand equation says
+CM; it does not make the underlying input changes themselves
+comparable, since they still differ in magnitude, and this should not
+be read as normalized sensitivity. The promo-exposure row deliberately
+moves two things at once (less promo cost and less assumed
+incremental volume) because that's what the demand equation says
 actually happens when exposure changes.
 
 ## Fulfillment presets
 
 "Owned fulfillment" and "Partner-fulfilled" are illustrative dollar
 assumptions to make scenarios concrete, not any real company's
-fulfillment economics -- Gopuff's, Uber's, DoorDash's, or otherwise.
+fulfillment economics: not Gopuff's, Uber's, DoorDash's, or otherwise.
 
 ## Run it
 
@@ -169,12 +170,12 @@ fixture.
 
 ## Limitations
 
-- Promotional pricing is inferred, not observed -- treat it as a proxy.
+- Promotional pricing is inferred, not observed; treat it as a proxy.
 - The SKU reference price is a full-period median, so it can misread a
   genuine price change as a promotion (see Data section above).
 - Fulfillment cost presets are illustrative, not sourced from any real
   company.
-- This is not a causal demand model -- no elasticity or incrementality
+- This is not a causal demand model: no elasticity or incrementality
   is estimated from the data; demand response is a user assumption.
 - The dataset is a single UK retailer, not an actual marketplace, so
   take rate, payment fees, and promo funding are entirely modeled, not

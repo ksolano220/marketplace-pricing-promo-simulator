@@ -12,7 +12,7 @@ from src.margin_model import ScenarioInputs, baseline_metrics, find_breakeven_li
 
 PROCESSED_PATH = Path(__file__).parent / "data" / "processed" / "orders.parquet"
 
-# Illustrative scenario presets only -- not any company's actual fulfillment economics.
+# Illustrative scenario presets only, not any company's actual fulfillment economics.
 FULFILLMENT_PRESETS = {
     "Owned fulfillment": 6.00,
     "Partner-fulfilled": 3.00,
@@ -24,7 +24,7 @@ st.set_page_config(page_title="Marketplace Pricing & Promotion Simulator", layou
 @st.cache_data
 def load_data() -> pd.DataFrame:
     # data/ is gitignored (raw + processed are both derived, not source-controlled),
-    # so a fresh clone -- e.g. a cold Streamlit Cloud deploy -- has neither file yet.
+    # so a fresh clone (e.g. a cold Streamlit Cloud deploy) has neither file yet.
     # Build them once here rather than requiring a manual pre-deploy step.
     if not PROCESSED_PATH.exists():
         with st.spinner("First run: downloading and processing the UCI dataset (~30s)..."):
@@ -42,12 +42,12 @@ st.caption(
     "Order volume and list-price AOV are computed from real transactions "
     "([UCI Online Retail II](https://archive.ics.uci.edu/dataset/502/online+retail+ii), "
     "37K real orders, 2009-2011). A line item counts as an **inferred promotional-pricing "
-    "proxy** -- not proof a promotion ran -- when its price sits 10%+ below that SKU's own "
+    "proxy** (not proof a promotion ran) when its price sits 10%+ below that SKU's own "
     "median observed price; a genuine price change over the two-year window could also "
     "trigger it. Take rate and payment fees apply to **customer-paid value** (post-discount), "
     "which is the convention this simulator uses. Fulfillment cost, promo economics, and the "
     "platform/merchant funding split are modeled as an adjustable marketplace-operator layer "
-    "on top of that real order flow -- illustrative assumptions, not any specific company's "
+    "on top of that real order flow: illustrative assumptions, not any specific company's "
     "figures. **This is a decision simulator, not a causal demand model:** incremental order "
     "lift among promo-exposed demand is an assumption you stress-test below, not an estimate "
     "inferred from the data."
@@ -84,14 +84,14 @@ with col_left:
         fulfillment_cost = FULFILLMENT_PRESETS[fulfillment_preset]
         st.caption(
             f"Illustrative assumption: \\${fulfillment_cost:.2f}/order for "
-            f"{fulfillment_preset.lower()} -- a scenario preset, not a real company's figure."
+            f"{fulfillment_preset.lower()}, a scenario preset, not a real company's figure."
         )
 
     st.markdown("**Promotion**")
     promo_exposed_gmv_share = st.slider(
         "Promo-exposed GMV share", 0.0, 0.50,
         float(round(base["promo_exposed_gmv_share"], 2)), 0.01,
-        help="Share of gross basket value that is promo-exposed, weighted by dollars -- not the "
+        help="Share of gross basket value that is promo-exposed, weighted by dollars, not the "
         "share of orders that merely contain a discounted item.",
     )
     promo_depth = st.slider(
@@ -105,7 +105,7 @@ with col_left:
     )
     incremental_lift = st.slider(
         "Incremental order lift among promo-exposed demand", 0.0, 0.50, 0.10, 0.01,
-        help="Assumed extra order volume generated among promo-exposed demand specifically -- "
+        help="Assumed extra order volume generated among promo-exposed demand specifically, "
         "an assumption you're stress-testing, not a measured effect.",
     )
 
@@ -212,13 +212,13 @@ else:
 
 st.subheader("Impact of practical operating changes")
 st.caption(
-    "Each row is one specific, independently-tested change from the current scenario -- not "
+    "Each row is one specific, independently-tested change from the current scenario, not "
     "standardized units, so a \\$1/order fulfillment move and a 1-point take-rate move aren't "
     "directly comparable in size. The % column expresses each scenario's impact relative to "
     "current contribution margin. Because the tested input changes differ in magnitude, this "
     "should not be interpreted as normalized sensitivity. The promo-exposed GMV share row "
-    "deliberately moves two things at once -- less promo cost and less assumed incremental "
-    "volume -- because that's what the model says actually happens when exposure changes."
+    "deliberately moves two things at once (less promo cost and less assumed incremental "
+    "volume) because that's what the model says actually happens when exposure changes."
 )
 sens = sensitivity_ranking(base, inputs)
 sens_df = pd.DataFrame(sens)

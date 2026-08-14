@@ -4,7 +4,7 @@ pricing/promo model needs: real order economics plus an inferred
 promotional-pricing proxy (no promo field exists in the source data,
 so a line item is flagged when its unit price sits at least 10%
 below that SKU's own median observed price across the dataset). This
-is a proxy, not proof a promotion ran -- a price difference could
+is a proxy, not proof a promotion ran: a price difference could
 also reflect a bulk-order discount, a data-entry variance, or a
 genuine list-price change over the two-year window.
 """
@@ -29,7 +29,7 @@ def load_raw() -> pd.DataFrame:
 
 
 def clean(df: pd.DataFrame) -> pd.DataFrame:
-    # Customer_ID is missing on ~23% of rows (~14% of revenue) -- these are
+    # Customer_ID is missing on ~23% of rows (~14% of revenue); these are
     # real guest/unregistered-checkout transactions in this dataset, not
     # data errors. Nothing in the margin model (orders, GMV, promo exposure,
     # contribution margin) depends on Customer_ID, so these rows are kept;

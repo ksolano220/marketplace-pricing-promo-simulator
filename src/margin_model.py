@@ -33,7 +33,7 @@ dataset). Take rate, fulfillment cost, payment fee, promo-exposed GMV
 share, promo depth, and the platform/merchant funding split are not
 present in that single-retailer data, so they're modeled as explicit,
 adjustable assumptions representing a marketplace operator sitting on
-top of this order flow -- exactly the inputs an exec would tune when
+top of this order flow, exactly the inputs an exec would tune when
 asked "if margins are low, what would you do?"
 
 This is a decision simulator, not a causal demand model: the
@@ -84,7 +84,7 @@ def baseline_metrics(df: pd.DataFrame) -> dict:
 
     promo_exposed_gmv_share and gmv_weighted_promo_depth are GMV-weighted
     (weighted by each line's list_value), not order-count-based or
-    line-count-based -- an order with one discounted item and four
+    line-count-based: an order with one discounted item and four
     full-price items should barely move these numbers, not count as
     fully "promo-exposed."
     """
@@ -176,7 +176,7 @@ def find_breakeven_lift(base: dict, inputs: ScenarioInputs, max_lift: float = 10
 
     max_lift=10.0 (1000% incremental lift among promo-exposed demand)
     is a search ceiling for the solver, not a claim about what's
-    commercially plausible -- the UI classifies the result separately.
+    commercially plausible; the UI classifies the result separately.
     """
     if inputs.promo_exposed_gmv_share <= 0:
         return {"reachable": False, "lift": None, "reason": "no promo-exposed GMV share set"}
@@ -195,7 +195,7 @@ def find_breakeven_lift(base: dict, inputs: ScenarioInputs, max_lift: float = 10
         return {
             "reachable": False,
             "lift": None,
-            "reason": f"not reachable even at {max_lift:.0%} incremental lift -- promo cost structurally exceeds what volume can offset at these settings",
+            "reason": f"not reachable even at {max_lift:.0%} incremental lift: promo cost structurally exceeds what volume can offset at these settings",
         }
 
     lo, hi = 0.0, max_lift
@@ -212,15 +212,15 @@ def sensitivity_ranking(base: dict, inputs: ScenarioInputs) -> list[dict]:
     """
     Tests five specific, practical operating changes from the current
     scenario and ranks them by contribution-margin impact. These are
-    NOT standardized units -- a $1/order fulfillment change and a 1
+    NOT standardized units: a $1/order fulfillment change and a 1
     percentage-point take-rate change are not economically equivalent
     sized moves, which is exactly why cm_delta_pct_of_baseline is
     included: it expresses each change as a % of the current
     scenario's contribution margin, which IS comparable across levers.
 
     The "Promo-exposed GMV share" row intentionally changes two things
-    at once -- less promo cost AND less assumed incremental volume,
-    per the demand equation in run_scenario -- because that's what
+    at once, less promo cost AND less assumed incremental volume,
+    per the demand equation in run_scenario, because that's what
     actually happens when exposure changes. That's a feature of the
     model, not a bug.
     """
