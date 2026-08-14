@@ -5,6 +5,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+from scripts.download_data import RAW_DIR
+from scripts.download_data import main as download_raw_data
+from src.data_prep import main as build_processed_data
 from src.margin_model import ScenarioInputs, baseline_metrics, find_breakeven_lift, run_scenario, sensitivity_ranking
 
 PROCESSED_PATH = Path(__file__).parent / "data" / "processed" / "orders.parquet"
@@ -20,6 +23,14 @@ st.set_page_config(page_title="Marketplace Pricing & Promotion Simulator", layou
 
 @st.cache_data
 def load_data() -> pd.DataFrame:
+    # data/ is gitignored (raw + processed are both derived, not source-controlled),
+    # so a fresh clone -- e.g. a cold Streamlit Cloud deploy -- has neither file yet.
+    # Build them once here rather than requiring a manual pre-deploy step.
+    if not PROCESSED_PATH.exists():
+        with st.spinner("First run: downloading and processing the UCI dataset (~30s)..."):
+            RAW_DIR.mkdir(parents=True, exist_ok=True)
+            download_raw_data()
+            build_processed_data()
     return pd.read_parquet(PROCESSED_PATH)
 
 
